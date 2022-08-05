@@ -1,7 +1,7 @@
 # hw1
 
 * [x] Poker(*)
-* Deco(*)
+* [x] Deco(*)
 * Log Analyzer
 
 ## Installation
@@ -13,6 +13,10 @@ pip install -r requirements.txt
 ## Usage
 
 run Poker task
+```bash
+python3 poker.py
+```
+run Deco task
 ```bash
 python3 poker.py
 ```
