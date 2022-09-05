@@ -8,6 +8,7 @@
 #                     '$request_time';
 import gzip
 import argparse
+import json
 from collections import namedtuple
 
 config = {
@@ -23,16 +24,23 @@ def parse_log(logfile: namedtuple):
         for line in file:
             print(line)
 
+def parse_config(configfile):
+    with open(configfile) as json_file:
+        data = json.load(json_file)
+    return data
 
 def main():
     parser = argparse.ArgumentParser(description="nginx log analyzer")
     parser.add_argument("-c", "--config", default="config.json", help="log and reports directories")
     args = parser.parse_args()
 
-    print(args.config)
+    main_config = parse_config(args.config)
 
-    # Logfile = namedtuple('Logfile', 'path date ext')
-    # parse_log(Logfile('log/nginx-access-ui.log-', '20170630', '.gz'))
+    #merge with default config
+    main_config = config | main_config
+
+    Logfile = namedtuple('Logfile', 'path date ext')
+    parse_log(Logfile(str(main_config['LOG_DIR']) + '/nginx-access-ui.log-', '20170630', '.gz'))
 
 if __name__ == "__main__":
     main()
