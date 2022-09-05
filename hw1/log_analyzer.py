@@ -7,6 +7,7 @@
 #                     '"$http_user_agent" "$http_x_forwarded_for" "$http_X_REQUEST_ID" "$http_X_RB_USER" '
 #                     '$request_time';
 import gzip
+import argparse
 from collections import namedtuple
 
 config = {
@@ -24,9 +25,14 @@ def parse_log(logfile: namedtuple):
 
 
 def main():
-    Logfile = namedtuple('Logfile', 'path date ext')
-    parse_log(Logfile('log/nginx-access-ui.log-', '20170630', '.gz'))
+    parser = argparse.ArgumentParser(description="nginx log analyzer")
+    parser.add_argument("-c", "--config", default="config.json", help="log and reports directories")
+    args = parser.parse_args()
 
+    print(args.config)
+
+    # Logfile = namedtuple('Logfile', 'path date ext')
+    # parse_log(Logfile('log/nginx-access-ui.log-', '20170630', '.gz'))
 
 if __name__ == "__main__":
     main()
