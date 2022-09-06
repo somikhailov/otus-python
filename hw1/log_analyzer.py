@@ -20,10 +20,10 @@ config = {
 
 def parse_log(logfile: namedtuple):
     filename = logfile.path + logfile.date + logfile.ext
-    with gzip.open(filename) if logfile.ext == ".gz" else open(filename) as file:
+    with gzip.open(filename, "rt") if logfile.ext == ".gz" else open(filename) as file:
         first_line = file.readline()
 
-    print(first_line)
+    print(first_line.split())
 
 
 def parse_config(configfile):
