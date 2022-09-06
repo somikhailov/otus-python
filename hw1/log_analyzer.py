@@ -21,8 +21,10 @@ config = {
 def parse_log(logfile: namedtuple):
     filename = logfile.path + logfile.date + logfile.ext
     with gzip.open(filename) if logfile.ext == ".gz" else open(filename) as file:
-        for line in file:
-            print(line)
+        first_line = file.readline()
+
+    print(first_line)
+
 
 def parse_config(configfile):
     with open(configfile) as json_file:
