@@ -18,7 +18,7 @@ python3 poker.py
 ```
 run Deco task
 ```bash
-python3 poker.py
+python3 deco.py
 ```
 
 ## License

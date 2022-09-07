@@ -9,6 +9,7 @@
 import gzip
 import argparse
 import json
+import itertools
 from collections import namedtuple
 
 config = {
@@ -20,10 +21,15 @@ config = {
 
 def parse_log(logfile: namedtuple):
     filename = logfile.path + logfile.date + logfile.ext
-    with gzip.open(filename, "rt") if logfile.ext == ".gz" else open(filename) as file:
-        first_line = file.readline()
 
-    print(first_line.split())
+    total_request_time = 0
+    urls = []
+    with gzip.open(filename, "rt") if logfile.ext == ".gz" else open(filename) as file:
+        for line in file:
+            urls.append([line.split()[6], line.split()[-1]])
+            total_request_time += float(line.split()[-1])
+    print("count: " + str(len(urls)))
+    print("total_request_time: " + str(total_request_time))
 
 
 def parse_config(configfile):
