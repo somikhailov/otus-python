@@ -28,9 +28,22 @@ def parse_log(logfile: namedtuple):
         for line in file:
             urls.append([line.split()[6], line.split()[-1]])
             total_request_time += float(line.split()[-1])
-    print("count: " + str(len(urls)))
-    print("total_request_time: " + str(total_request_time))
 
+    count = str(len(urls))
+    print("count: " + count)
+
+    total_request_time = str(total_request_time)
+    print("total_request_time: " + total_request_time)
+
+    urls = sorted(urls)
+
+    groups = []
+    uniquekeys = []
+    for k, g in itertools.groupby(urls):
+        uniquekeys.append(k)
+        groups.append(list(g))
+
+    [print(uniquekeys[i], groups[i], sep='\n') for i in range(5)]
 
 def parse_config(configfile):
     with open(configfile) as json_file:
