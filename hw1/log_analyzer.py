@@ -19,37 +19,33 @@ config = {
 }
 
 
-def parse_log(logfile: namedtuple):
-    filename = logfile.path + logfile.date + logfile.ext
-
-    total_request_time = 0
-    urls = []
-    with gzip.open(filename, "rt") if logfile.ext == ".gz" else open(filename) as file:
-        for line in file:
-            urls.append([line.split()[6], line.split()[-1]])
-            total_request_time += float(line.split()[-1])
-
-    count = str(len(urls))
-    print("count: " + count)
-
-    total_request_time = str(total_request_time)
-    print("total_request_time: " + total_request_time)
-
-    urls = sorted(urls)
-
-    groups = []
-    uniquekeys = []
-    for k, g in itertools.groupby(urls):
-        uniquekeys.append(k[0])
-        groups.append(float(k[1]) * len(list(g)))
-
-    [print(uniquekeys[i], groups[i], sep=' ') for i in range(5)]
-
-
 def parse_config(configfile):
     with open(configfile) as json_file:
         data = json.load(json_file)
     return data
+
+
+def parse_log(logfile: namedtuple):
+    filename = logfile.path + logfile.date + logfile.ext
+
+    urls = []
+    with gzip.open(filename, "rt") if logfile.ext == ".gz" else open(filename) as file:
+        for line in file:
+            urls.append([line.split()[6], line.split()[-1]])
+
+    return sorted(urls)
+
+
+def calc_report_values(urls):
+    count = len(urls)
+    print("count: " + str(count))
+
+    group_urls = []
+    for k, g in itertools.groupby(urls):
+        group_urls.append([k[0], (float(k[1]) * len(list(g)))])
+
+    [print(group_urls[i]) for i in range(5)]
+
 
 def main():
     parser = argparse.ArgumentParser(description="nginx log analyzer")
@@ -62,7 +58,8 @@ def main():
     main_config = config | main_config
 
     Logfile = namedtuple('Logfile', 'path date ext')
-    parse_log(Logfile(str(main_config['LOG_DIR']) + '/nginx-access-ui.log-', '20170630', '.gz'))
+    calc_report_values(parse_log(Logfile(str(main_config['LOG_DIR']) + '/nginx-access-ui.log-', '20170630', '.gz')))
+
 
 if __name__ == "__main__":
     main()
