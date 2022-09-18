@@ -40,10 +40,11 @@ def parse_log(logfile: namedtuple):
     groups = []
     uniquekeys = []
     for k, g in itertools.groupby(urls):
-        uniquekeys.append(k)
-        groups.append(list(g))
+        uniquekeys.append(k[0])
+        groups.append(float(k[1]) * len(list(g)))
 
-    [print(uniquekeys[i], groups[i], sep='\n') for i in range(5)]
+    [print(uniquekeys[i], groups[i], sep=' ') for i in range(5)]
+
 
 def parse_config(configfile):
     with open(configfile) as json_file:
