@@ -36,14 +36,18 @@ def parse_log(logfile: namedtuple):
 def calc_report_values(urls_req_time):
     report_values = []
     for key, group in itertools.groupby(urls_req_time, lambda url: url[0]):
-        group = list(group)
+        req_time_list = [float(req_time) for _, req_time in group]
         report_values.append([
             key,
-            len(group),
-            sum(float(req_time) for _, req_time in group)
+            len(req_time_list),
+            sum(req_time_list),
+            max(req_time_list)
         ])
-
     [ print(report_values[i]) for i in range(5)]
+    count_total = sum(count for _, count, _, _ in report_values)
+    print("count_total: %s" % count_total )
+    req_time_total = sum(req_time for _, _, req_time, _ in report_values)
+    print("req_time_total: %s" % req_time_total)
 
 
 def main():
