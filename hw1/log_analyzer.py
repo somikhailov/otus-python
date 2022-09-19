@@ -28,22 +28,18 @@ def parse_config(configfile):
 def parse_log(logfile: namedtuple):
     filename = logfile.path + logfile.date + logfile.ext
 
-    urls_req_time = []
     with gzip.open(filename, "rt") if logfile.ext == ".gz" else open(filename) as file:
         for line in file:
-            urls_req_time.append([line.split()[6], line.split()[-1]])
-
-    return sorted(urls_req_time)
+            yield [line.split()[6], line.split()[-1]]
 
 
 def calc_report_values(urls_req_time):
-    count_total = len(urls_req_time)
-    print("count: " + str(count_total))
-
     report_values = []
     for key, group in itertools.groupby(urls_req_time, lambda url: url[0]):
+        group = list(group)
         report_values.append([
             key,
+            len(group),
             sum(float(req_time) for _, req_time in group)
         ])
 
