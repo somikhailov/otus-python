@@ -27,7 +27,6 @@ def parse_config(configfile):
 
 def parse_log(logfile: namedtuple):
     filename = logfile.path + logfile.date + logfile.ext
-
     with gzip.open(filename, "rt") if logfile.ext == ".gz" else open(filename) as file:
         for line in file:
             yield [line.split()[6], line.split()[-1]]
@@ -37,17 +36,17 @@ def calc_report_values(urls_req_time):
     report_values = []
     for key, group in itertools.groupby(urls_req_time, lambda url: url[0]):
         req_time_list = [float(req_time) for _, req_time in group]
-        report_values.append([
-            key,
-            len(req_time_list),
-            sum(req_time_list),
-            max(req_time_list)
-        ])
-    [ print(report_values[i]) for i in range(5)]
-    count_total = sum(count for _, count, _, _ in report_values)
-    print("count_total: %s" % count_total )
-    req_time_total = sum(req_time for _, _, req_time, _ in report_values)
-    print("req_time_total: %s" % req_time_total)
+        report_values.append({
+            "url": key,
+            "count": len(req_time_list),
+            "time_sum": sum(req_time_list),
+            "time_max": max(req_time_list)
+        })
+    with open("report.html", "rt")  as file:
+        file_data = file.read()
+    file_data = file_data.replace('$table_json', json.dumps(report_values[:5]))
+    with open("reports/report-1.html", 'w') as file:
+        file.write(file_data)
 
 
 def main():
