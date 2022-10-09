@@ -9,8 +9,8 @@
 import gzip
 import argparse
 import json
-import itertools
-from collections import namedtuple
+import statistics
+from collections import namedtuple, defaultdict
 
 config = {
     "REPORT_SIZE": 1000,
@@ -32,19 +32,37 @@ def parse_log(logfile: namedtuple):
             yield [line.split()[6], line.split()[-1]]
 
 
-def calc_report_values(urls_req_time):
+def get_report(log_data: list):
+    url_data = defaultdict(list)
+    count_total, time_total = 0, 0
+
+    for url, req_time in log_data:
+        url_data[url].append(float(req_time))
+        count_total += 1
+        time_total += float(req_time)
+
     report_values = []
-    for key, group in itertools.groupby(urls_req_time, lambda url: url[0]):
-        req_time_list = [float(req_time) for _, req_time in group]
+    for url, req_times in url_data.items():
+        count = len(req_times)
+        time_sum = sum(req_times)
         report_values.append({
-            "url": key,
-            "count": len(req_time_list),
-            "time_sum": sum(req_time_list),
-            "time_max": max(req_time_list)
+            "url": url,
+            "count": count,
+            "count_perc": round(count / count_total * 100, 3),
+            "time_sum": round(time_sum, 3),
+            "time_perc": round(time_sum / time_total * 100, 3),
+            "time_avg": round(time_sum / count, 3),
+            "time_max": round(max(req_times), 3),
+            "time_med": round(statistics.median(req_times), 3)
         })
+
     with open("report.html", "rt")  as file:
         file_data = file.read()
-    file_data = file_data.replace('$table_json', json.dumps(report_values[:5]))
+
+    file_data = file_data.replace(
+        '$table_json',
+        json.dumps(sorted(report_values, key=lambda item: item["time_sum"], reverse=True)[:1000])
+    )
     with open("reports/report-1.html", 'w') as file:
         file.write(file_data)
 
@@ -60,7 +78,7 @@ def main():
     main_config = config | main_config
 
     Logfile = namedtuple('Logfile', 'path date ext')
-    calc_report_values(parse_log(Logfile(str(main_config['LOG_DIR']) + '/nginx-access-ui.log-', '20170630', '.gz')))
+    get_report(parse_log(Logfile(str(main_config['LOG_DIR']) + '/nginx-access-ui.log-', '20170630', '.gz')))
 
 
 if __name__ == "__main__":
