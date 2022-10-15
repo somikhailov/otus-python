@@ -9,8 +9,10 @@
 import gzip
 import argparse
 import os
+import re
 import json
 import statistics
+import datetime
 from collections import namedtuple, defaultdict
 
 config = {
@@ -20,14 +22,31 @@ config = {
 }
 
 
-def parse_config(configfile):
-    with open(configfile) as json_file:
-        data = json.load(json_file)
-    return data
+def parse_config(configfile) -> json:
+    with open(configfile) as file:
+        return json.load(file)
+
+
+def get_latest_log(logdir: str) -> namedtuple('Logfile', 'path date ext'):
+    Logfile = namedtuple('Logfile', 'path date ext')
+    template = re.compile(r"^nginx-access-ui\.log-(?P<date>\d{8})(?P<ext>\.gz|)?$")
+
+    last_logfile = None
+
+    for logfile in os.listdir(logdir):
+        match = re.match(template, logfile)
+        if match:
+            log_date = datetime.datetime.strptime(match.groupdict()['date'], '%Y%m%d').date()
+            ext = match.groupdict()['ext']
+
+            if not last_logfile or log_date > last_logfile.date:
+                last_logfile = Logfile(os.path.join(logdir, logfile), log_date, ext)
+
+    return last_logfile
 
 
 def parse_log(logfile: namedtuple):
-    filename = logfile.path + logfile.date + logfile.ext
+    filename = logfile.path
     with gzip.open(filename, "rt") if logfile.ext == ".gz" else open(filename) as file:
         for line in file:
             yield [line.split()[6], line.split()[-1]]
@@ -57,7 +76,7 @@ def get_report(log_data: list):
             "time_med": round(statistics.median(req_times), 3)
         })
 
-    with open("report.html", "rt")  as file:
+    with open("report.html", "rt") as file:
         file_data = file.read()
 
     file_data = file_data.replace(
@@ -73,15 +92,12 @@ def main():
     parser.add_argument("-c", "--config", default="config.json", help="log and reports directories")
     args = parser.parse_args()
 
-    main_config = parse_config(args.config)
+    main_config = config | parse_config(args.config)
 
-    #merge with default config
-    main_config = config | main_config
+    logfile = get_latest_log(main_config["LOG_DIR"])
 
-    # Logfile = namedtuple('Logfile', 'path date ext')
-    # get_report(parse_log(Logfile(str(main_config['LOG_DIR']) + '/nginx-access-ui.log-', '20170630', '.gz')))
+    get_report(parse_log(logfile))
 
-    print(os.listdir(main_config["LOG_DIR"]))
 
 if __name__ == "__main__":
     main()
