@@ -8,6 +8,7 @@
 #                     '$request_time';
 import gzip
 import argparse
+import os
 import json
 import statistics
 from collections import namedtuple, defaultdict
@@ -77,9 +78,10 @@ def main():
     #merge with default config
     main_config = config | main_config
 
-    Logfile = namedtuple('Logfile', 'path date ext')
-    get_report(parse_log(Logfile(str(main_config['LOG_DIR']) + '/nginx-access-ui.log-', '20170630', '.gz')))
+    # Logfile = namedtuple('Logfile', 'path date ext')
+    # get_report(parse_log(Logfile(str(main_config['LOG_DIR']) + '/nginx-access-ui.log-', '20170630', '.gz')))
 
+    print(os.listdir(main_config["LOG_DIR"]))
 
 if __name__ == "__main__":
     main()

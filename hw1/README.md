@@ -11,7 +11,7 @@ pip install -r requirements.txt
 ```
 
 ```bash
-npm install tablesorter
+npm install -g tablesorter
 ```
 
 ## Usage
