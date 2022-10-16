@@ -17,12 +17,23 @@ import datetime
 from collections import namedtuple, defaultdict
 from string import Template
 
-config = {
+DEFAULT_CONFIG = {
     "REPORT_SIZE": 1000,
     "REPORT_DIR": "./reports",
     "LOG_DIR": "./log",
     "OUTPUT_FILE": None
 }
+
+TEMPLATE_LOG_FILE = re.compile(r"^nginx-access-ui\.log-(?P<date>\d{8})(?P<ext>\.gz|)?$")
+
+TEMPLATE_LOG = re.compile(
+    r'(?P<remote_addr>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(?P<remote_user>.*?)\s+'
+    r'(?P<http_x_real_ip>.*?)\s+\[(?P<time_local>.*?)\]\s+\"(?P<request_method>.*?)\s+'
+    r'(?P<url>.*?)(?P<request_version>\s+HTTP/.*)?\"\s+(?P<status>.*?)\s+'
+    r'(?P<body_bytes_sent>.*?)\s+\"(?P<http_referer>.*?)\"\s+\"(?P<http_user_agent>.*?)\"\s+'
+    r'\"(?P<http_x_forwarded_for>.*?)\"\s+\"(?P<http_X_REQUEST_ID>.*?)\"\s+'
+    r'\"(?P<http_X_RB_USER>.*)\"\s+(?P<request_time>\d+\.?\d*)'
+)
 
 
 def parse_config(configfile) -> json:
@@ -30,9 +41,8 @@ def parse_config(configfile) -> json:
         return json.load(file)
 
 
-def get_latest_log(logdir: str) -> namedtuple('Logfile', 'path date ext'):
+def get_latest_log(logdir: str, template: str) -> namedtuple('Logfile', 'path date ext'):
     Logfile = namedtuple('Logfile', 'path date ext')
-    template = re.compile(r"^nginx-access-ui\.log-(?P<date>\d{8})(?P<ext>\.gz|)?$")
     last_logfile = None
 
     for logfile in os.listdir(logdir):
@@ -47,11 +57,17 @@ def get_latest_log(logdir: str) -> namedtuple('Logfile', 'path date ext'):
     return last_logfile
 
 
-def parse_log(logfile: namedtuple('Logfile', 'path date ext')):
+def parse_log(logfile: namedtuple('Logfile', 'path date ext'), template):
     filename = logfile.path
+    counter = 0
     with gzip.open(filename, "rt") if logfile.ext == ".gz" else open(filename) as file:
         for line in file:
-            yield [line.split()[6], line.split()[-1]]
+            counter += 1
+            parse_line = template.match(line)
+            if parse_line:
+                yield [parse_line.group('url'), float(parse_line.group('request_time'))]
+            else:
+                logging.error('line №{} not from template'.format(counter))
 
 
 def get_report(log_data, report_size: int):
@@ -94,23 +110,23 @@ def main():
     parser = argparse.ArgumentParser(description="nginx log analyzer")
     parser.add_argument("-c", "--config", default="config.json", help="log and reports directories")
     args = parser.parse_args()
-    main_config = config | parse_config(args.config)
+    config = DEFAULT_CONFIG | parse_config(args.config)
 
     logging.basicConfig(
         format=u"[%(asctime)s] %(levelname).1s %(message)s",
-        filename=main_config["OUTPUT_FILE"],
+        filename=config["OUTPUT_FILE"],
         level=logging.INFO,
         datefmt='%Y.%m.%d %H:%M:%S'
     )
 
-    logfile = get_latest_log(main_config["LOG_DIR"])
-    report_filename = "{}/report-{}.html".format(main_config["REPORT_DIR"], logfile.date.strftime('%Y.%m.%d'))
+    logfile = get_latest_log(config["LOG_DIR"], TEMPLATE_LOG_FILE)
+    report_filename = "{}/report-{}.html".format(config["REPORT_DIR"], logfile.date.strftime('%Y.%m.%d'))
 
     if not os.path.isfile(report_filename):
-        report_values = get_report(parse_log(logfile), main_config["REPORT_SIZE"])
+        report_values = get_report(parse_log(logfile, TEMPLATE_LOG), config["REPORT_SIZE"])
         write_report(report_values, report_filename)
-    else:
-        logging.info('{} exists'.format(report_filename))
+    # else:
+    #     logging.info('{} exists'.format(report_filename))
 
 
 if __name__ == "__main__":
