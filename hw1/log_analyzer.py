@@ -11,6 +11,7 @@ import argparse
 import os
 import re
 import json
+import logging
 import statistics
 import datetime
 from collections import namedtuple, defaultdict
@@ -19,7 +20,8 @@ from string import Template
 config = {
     "REPORT_SIZE": 1000,
     "REPORT_DIR": "./reports",
-    "LOG_DIR": "./log"
+    "LOG_DIR": "./log",
+    "OUTPUT_FILE": None
 }
 
 
@@ -94,12 +96,21 @@ def main():
     args = parser.parse_args()
     main_config = config | parse_config(args.config)
 
+    logging.basicConfig(
+        format=u"[%(asctime)s] %(levelname).1s %(message)s",
+        filename=main_config["OUTPUT_FILE"],
+        level=logging.INFO,
+        datefmt='%Y.%m.%d %H:%M:%S'
+    )
+
     logfile = get_latest_log(main_config["LOG_DIR"])
     report_filename = "{}/report-{}.html".format(main_config["REPORT_DIR"], logfile.date.strftime('%Y.%m.%d'))
 
     if not os.path.isfile(report_filename):
         report_values = get_report(parse_log(logfile), main_config["REPORT_SIZE"])
         write_report(report_values, report_filename)
+    else:
+        logging.info('{} exists'.format(report_filename))
 
 
 if __name__ == "__main__":
