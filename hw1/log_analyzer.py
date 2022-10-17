@@ -21,7 +21,8 @@ DEFAULT_CONFIG = {
     "REPORT_SIZE": 1000,
     "REPORT_DIR": "./reports",
     "LOG_DIR": "./log",
-    "OUTPUT_FILE": None
+    "OUTPUT_FILE": None,
+    "ERRORS_LIMIT": 0.5
 }
 
 TEMPLATE_LOG_FILE = re.compile(r"^nginx-access-ui\.log-(?P<date>\d{8})(?P<ext>\.gz|)?$")
@@ -41,7 +42,7 @@ def read_config(configfile) -> json:
         return json.load(file)
 
 
-def get_latest_log(logdir: str, template: str) -> namedtuple('Logfile', 'path date ext'):
+def get_latest_log(logdir: str, template) -> namedtuple('Logfile', 'path date ext'):
     Logfile = namedtuple('Logfile', 'path date ext')
     last_logfile = None
 
@@ -53,13 +54,13 @@ def get_latest_log(logdir: str, template: str) -> namedtuple('Logfile', 'path da
 
             if not last_logfile or log_date > last_logfile.date:
                 last_logfile = Logfile(os.path.join(logdir, logfile), log_date, ext)
-
     return last_logfile
 
 
-def parse_log(logfile: namedtuple('Logfile', 'path date ext'), template: str):
+def parse_log(logfile: namedtuple('Logfile', 'path date ext'), template, error_limit: float):
     filename = logfile.path
     total, processed = 0, 0
+
     with gzip.open(filename, "rt") if logfile.ext == ".gz" else open(filename) as file:
         for line in file:
             total += 1
@@ -70,6 +71,8 @@ def parse_log(logfile: namedtuple('Logfile', 'path date ext'), template: str):
             else:
                 logging.error("line №%s does not match the template" % total)
     logging.info("%s of %s lines processed" % (processed, total))
+    if (total - processed) / total > error_limit:
+        raise Exception('Errors limit exceed')
 
 
 def get_report(log_data, report_size: int):
@@ -95,7 +98,6 @@ def get_report(log_data, report_size: int):
             "time_max": round(max(req_times), 3),
             "time_med": round(statistics.median(req_times), 3)
         })
-
     return sorted(report_values, key=lambda item: item["time_sum"], reverse=True)[:report_size]
 
 
@@ -125,11 +127,14 @@ def main():
     report_filename = "%s/report-%s.html" % (config["REPORT_DIR"], logfile.date.strftime('%Y.%m.%d'))
 
     if not os.path.isfile(report_filename):
-        report_values = get_report(parse_log(logfile, TEMPLATE_LOG), config["REPORT_SIZE"])
+        report_values = get_report(parse_log(logfile, TEMPLATE_LOG, config["ERRORS_LIMIT"]), config["REPORT_SIZE"])
         write_report(report_values, report_filename)
     else:
         logging.info('%s exists' % report_filename)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except:
+        logging.exception('Exception in main function')
