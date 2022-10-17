@@ -36,7 +36,7 @@ TEMPLATE_LOG = re.compile(
 )
 
 
-def parse_config(configfile) -> json:
+def read_config(configfile) -> json:
     with open(configfile) as file:
         return json.load(file)
 
@@ -57,17 +57,19 @@ def get_latest_log(logdir: str, template: str) -> namedtuple('Logfile', 'path da
     return last_logfile
 
 
-def parse_log(logfile: namedtuple('Logfile', 'path date ext'), template):
+def parse_log(logfile: namedtuple('Logfile', 'path date ext'), template: str):
     filename = logfile.path
-    counter = 0
+    total, processed = 0, 0
     with gzip.open(filename, "rt") if logfile.ext == ".gz" else open(filename) as file:
         for line in file:
-            counter += 1
-            parse_line = template.match(line)
-            if parse_line:
-                yield [parse_line.group('url'), float(parse_line.group('request_time'))]
+            total += 1
+            parsed_line = template.match(line)
+            if parsed_line:
+                processed += 1
+                yield [parsed_line.group('url'), float(parsed_line.group('request_time'))]
             else:
-                logging.error('line №{} not from template'.format(counter))
+                logging.error("line №%s does not match the template" % total)
+    logging.info("%s of %s lines processed" % (processed, total))
 
 
 def get_report(log_data, report_size: int):
@@ -75,7 +77,7 @@ def get_report(log_data, report_size: int):
     count_total, time_total = 0, 0
 
     for url, req_time in log_data:
-        url_data[url].append(float(req_time))
+        url_data[url].append(req_time)
         count_total += 1
         time_total += float(req_time)
 
@@ -110,7 +112,7 @@ def main():
     parser = argparse.ArgumentParser(description="nginx log analyzer")
     parser.add_argument("-c", "--config", default="config.json", help="log and reports directories")
     args = parser.parse_args()
-    config = DEFAULT_CONFIG | parse_config(args.config)
+    config = DEFAULT_CONFIG | read_config(args.config)
 
     logging.basicConfig(
         format=u"[%(asctime)s] %(levelname).1s %(message)s",
@@ -120,13 +122,13 @@ def main():
     )
 
     logfile = get_latest_log(config["LOG_DIR"], TEMPLATE_LOG_FILE)
-    report_filename = "{}/report-{}.html".format(config["REPORT_DIR"], logfile.date.strftime('%Y.%m.%d'))
+    report_filename = "%s/report-%s.html" % (config["REPORT_DIR"], logfile.date.strftime('%Y.%m.%d'))
 
     if not os.path.isfile(report_filename):
         report_values = get_report(parse_log(logfile, TEMPLATE_LOG), config["REPORT_SIZE"])
         write_report(report_values, report_filename)
-    # else:
-    #     logging.info('{} exists'.format(report_filename))
+    else:
+        logging.info('%s exists' % report_filename)
 
 
 if __name__ == "__main__":
