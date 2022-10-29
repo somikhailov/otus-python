@@ -2,6 +2,7 @@
 
 ## Installation
 
+> for linux
 ```bash
 npm install -g tablesorter
 ```
@@ -10,6 +11,11 @@ npm install -g tablesorter
 
 ```bash
 python3 log_analyzer.py --config config.json
+```
+
+## Test
+```bash
+python3 test_log_analyzer.py
 ```
 
 ## License
