@@ -4,7 +4,7 @@ import datetime
 from unittest.mock import patch, mock_open
 from collections import namedtuple
 import log_analyzer as log_analyzer
-from log_analyzer import TEMPLATE_LOG_FILE
+from log_analyzer import TEMPLATE_LOG_FILE, TEMPLATE_LOG
 
 
 class LogAnalyzerTest(unittest.TestCase):
@@ -34,6 +34,23 @@ class LogAnalyzerTest(unittest.TestCase):
         self.assertEqual(expected.path.split('/')[3], actual.path.split('/')[3])
         self.assertEqual(expected.date, actual.date)
         self.assertEqual(expected.ext, actual.ext)
+
+    def test_get_report(self):
+        log_data = [['/api/v2/internal/html5/phantomjs/queue/?wait=1m', 9843.569]]
+
+        actual = log_analyzer.get_report(log_data, 1)
+        expected = [{
+                'url': '/api/v2/internal/html5/phantomjs/queue/?wait=1m',
+                'count': 1,
+                'count_perc': 100.0,
+                'time_sum': 9843.569,
+                'time_perc': 100.0,
+                'time_avg': 9843.569,
+                'time_max': 9843.569,
+                'time_med': 9843.569
+        }]
+        self.assertEqual(expected, actual)
+
 
 if __name__ == '__main__':
     unittest.main()
