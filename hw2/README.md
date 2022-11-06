@@ -4,7 +4,10 @@
 
 ```bash
 docker-compose up -d --build
-docker-compose -it exec centos7-cpython ./python
+```
+test until patch
+```bash
+docker-compose exec centos7-cpython-until ./python /opt/test/until.py
 ```
 
 ## License

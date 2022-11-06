@@ -1,8 +1,12 @@
 version: '3.8'
 
 services:
-  centos7-cpython:
-    container_name: centos7-cpython
-    image: somikhaylov/centos7-cpython
-    build: .
+  centos7-cpython-until:
+    container_name: centos7-cpython-until
+    image: somikhaylov/centos7-cpython-until
+    build:
+      dockerfile: Dockerfile.until
+      context: .
+    volumes:
+      - ./test:/opt/test
     stdin_open: true
