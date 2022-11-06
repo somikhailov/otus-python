@@ -10,3 +10,23 @@ services:
     volumes:
       - ./test:/opt/test
     stdin_open: true
+
+  centos7-cpython-inc:
+    container_name: centos7-cpython-inc
+    image: somikhaylov/centos7-cpython-inc
+    build:
+      dockerfile: Dockerfile.inc
+      context: .
+    volumes:
+      - ./test:/opt/test
+    stdin_open: true
+
+  centos7-cpython-new-opcode:
+    container_name: centos7-cpython-new-opcode
+    image: somikhaylov/centos7-cpython-new-opcode
+    build:
+      dockerfile: Dockerfile.new_opcode
+      context: .
+    volumes:
+      - ./test:/opt/test
+    stdin_open: true

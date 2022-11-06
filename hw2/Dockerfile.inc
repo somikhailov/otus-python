@@ -5,6 +5,6 @@ WORKDIR /opt/cpython
 RUN git checkout 2.7
 
 FROM base
-COPY patches/until.patch .
-RUN git apply until.patch && ./configure --with-pydebug --prefix=/tmp/python && make -j $nproc
+COPY patches/inc.patch .
+RUN git apply inc.patch && ./configure --with-pydebug --prefix=/tmp/python && make -j $nproc
 ENTRYPOINT /bin/bash
