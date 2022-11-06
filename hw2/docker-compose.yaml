@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  centos7-cpython:
+    container_name: centos7-cpython
+    image: somikhaylov/centos7-cpython
+    build: .
+    stdin_open: true
